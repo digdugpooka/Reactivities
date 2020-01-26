@@ -8,10 +8,8 @@ configure({ enforceActions: 'always'});
 class ActivityStore {
     @observable activityRegistry = new Map(); // MobX Observable Map
     
-    @observable activities: IActivity[] = [];
     @observable loadingInitial = false;
-    @observable selectedActivity: IActivity | undefined;
-    @observable editMode = false;
+    @observable activity: IActivity | null = null;
     @observable submitting = false;
     @observable target = ''; // target element for showing indicator
 
@@ -21,12 +19,8 @@ class ActivityStore {
         );
     }
 
-    @action cancelFormOpen = () => { 
-        this.editMode = false;
-    }
-
-    @action cancelSelectedActivity = () => { 
-        this.selectedActivity = undefined;
+    @action clearActivity = () => { 
+        this.activity = null;
     }
 
     @action createActivity = async (activity: IActivity) => { 
@@ -35,7 +29,6 @@ class ActivityStore {
             await Agent.Activities.create(activity);
             runInAction('creating activity', () => {
                 this.activityRegistry.set(activity.id, activity);
-                this.editMode = false;
             });
         }
         catch (error) { 
@@ -73,8 +66,7 @@ class ActivityStore {
             await Agent.Activities.update(activity);
             runInAction(() => { 
                 this.activityRegistry.set(activity.id, activity);
-                this.selectedActivity = activity;
-                this.editMode = false;
+                this.activity = activity;
             });
         } 
         catch (error) { 
@@ -110,21 +102,34 @@ class ActivityStore {
         }
     }
 
-    @action openCreateForm = () => { 
-        this.editMode = true;
-        this.selectedActivity = undefined;
+    // Gets an activity from the local map/registry if it exists, otherwise the API.
+    @action loadActivity = async (id: string) => { 
+        let activity = this.getActivity(id);
+        if (activity) {
+            this.activity = activity;
+        } else { 
+            this.loadingInitial = true;
+            try { 
+                activity = await Agent.Activities.details(id);
+                runInAction('getting activity', () => { 
+                    this.activity = activity;
+                });
+            } 
+            catch (error) { 
+                console.log(error);
+            } 
+            finally { 
+                runInAction(() => { 
+                    this.loadingInitial = false;
+                });
+            }
+        }
+        
     }
 
-    @action openEditForm = (id: string) => { 
-        this.selectedActivity = this.activityRegistry.get(id);
-        this.editMode = true;
+    getActivity = (id: string) => { 
+        return this.activityRegistry.get(id);
     }
-
-    @action selectActivity = (id: string) => { 
-        this.selectedActivity = this.activityRegistry.get(id); // this.activities.find(a => a.id === id);
-        this.editMode = false;
-    }
-
 }
 
 // Exposes ActivityStore in React Context so it can be accessed via the useContext hook.
