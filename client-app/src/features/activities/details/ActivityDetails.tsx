@@ -13,15 +13,19 @@ interface DetailParams {
   id: string;
 }
 
-const ActivityDetails: React.FC<RouteComponentProps<DetailParams>> = ({match}) => {
+const ActivityDetails: React.FC<RouteComponentProps<DetailParams>> = ({match, history}) => {
   const activityStore = useContext(ActivityStore);  
   const { activity, loadActivity, loadingInitial } = activityStore;
 
   useEffect(() => { 
     loadActivity(match.params.id);
-  }, [loadActivity, match.params.id]);
+  
+  }, [loadActivity, match.params.id, history]);
 
   if (loadingInitial || !activity) return <LoadingComponent content="Loading activity..." />
+
+  if (!activity) 
+    return <h2>Activity Not Found</h2>
 
   /* Note from Darren: notice the ! after activity below. This tells TypeScript to quit worrying about the 
   possibility of being undefined. This component would only render when activity is set anyway. */
