@@ -18,6 +18,7 @@ using Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using AutoMapper;
+using System.Collections.Generic;
 
 namespace API
 {
@@ -52,6 +53,8 @@ namespace API
             });
 
             services.AddMediatR(typeof(Application.Activities.List.Handler).Assembly);
+            services.AddAutoMapper(typeof(Application.Activities.List.Handler));
+            
             services.AddControllers(opt => 
                 {
                     var policy = new AuthorizationPolicyBuilder()
