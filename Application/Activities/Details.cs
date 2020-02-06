@@ -33,8 +33,6 @@ namespace Application.Activities
             public async Task<ActivityDto> Handle(Query request, CancellationToken cancellationToken)
             {
                 var activity = await context.Activities
-                    .Include(a => a.UserActivities)
-                        .ThenInclude(ua => ua.AppUser)
                     .SingleOrDefaultAsync(a => a.Id == request.Id);
 
                 if (activity == null)

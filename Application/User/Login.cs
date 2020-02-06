@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,9 @@ namespace Application.User
 
             public async Task<User> Handle(Query request, CancellationToken cancellationToken)
             {
-                var user = await userManager.FindByEmailAsync(request.Email);
+                AppUser user = await userManager.FindByEmailAsync(request.Email);
+                
+                
                 if (user == null)
                 {
                     throw new RestException(HttpStatusCode.Unauthorized);
@@ -57,7 +60,7 @@ namespace Application.User
                         DisplayName = user.DisplayName,
                         Token = jwtGenerator.CreateToken(user),
                         Username = user.UserName,
-                        Image = null
+                        Image = user.Photos.FirstOrDefault(p => p.IsMain)?.Url
                     };
                 }
                 else
