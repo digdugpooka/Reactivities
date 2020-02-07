@@ -31,10 +31,7 @@ interface DetailParams {
   id: string;
 }
 
-const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
-  match,
-  history
-}) => {
+const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({ match, history}) => {
   const rootStore = useContext(RootStoreContext);
   const {
     createActivity,

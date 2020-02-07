@@ -40,6 +40,24 @@ export default class ProfileStore {
     }
   };
 
+  @action updateProfile = async (profile: IProfile) => { 
+    this.loadingProfile = true;
+    try {
+      await agent.Profiles.update(profile);
+      runInAction(() => { 
+        this.rootStore.userStore.user!.displayName = profile.displayName;
+        this.profile = {...this.profile, ...profile};
+      });
+    } catch (error) { 
+      console.log(error);
+    }
+    finally { 
+      runInAction(() => { 
+        this.loadingProfile = false;
+      });
+    }
+  };
+
   @action uploadPhoto = async (file: Blob) => {
     this.uploadingPhoto = true;
     try {
