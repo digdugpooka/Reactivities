@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Application.Comments;
 
 namespace Application.Activities
 {
@@ -22,5 +23,8 @@ namespace Application.Activities
 
         [JsonPropertyName("attendees")]
         public virtual ICollection<AttendeeDto> UserActivities { get; set; } 
+
+        [JsonPropertyName("comments")]
+        public virtual ICollection<CommentDto> Comments { get; set; }
     }
 }

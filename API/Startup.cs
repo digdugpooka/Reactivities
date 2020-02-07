@@ -20,6 +20,8 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using AutoMapper;
 using System.Collections.Generic;
 using Infrastructure.Photos;
+using API.SignalR;
+using System.Threading.Tasks;
 
 namespace API
 {
@@ -49,13 +51,15 @@ namespace API
                     policy
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .WithOrigins("http://localhost:3000");
+                        .WithOrigins("http://localhost:3000")
+                        .AllowCredentials(); // Allows SignalR to connect
                 });
             });
 
             services.AddMediatR(typeof(Application.Activities.List.Handler).Assembly);
             services.AddAutoMapper(typeof(Application.Activities.List.Handler));
-            
+            services.AddSignalR();
+
             services.AddControllers(opt => 
                 {
                     var policy = new AuthorizationPolicyBuilder()
@@ -92,6 +96,19 @@ namespace API
                         IssuerSigningKey = key,
                         ValidateAudience = false,
                         ValidateIssuer = false
+                    };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chat")))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -130,6 +147,7 @@ namespace API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<ChatHub>("/chat"); // SignalR websockets endpoint for comments
             });
         }
     }

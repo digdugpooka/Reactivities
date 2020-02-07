@@ -5,6 +5,15 @@ export interface IAttendee {
     isHost: boolean
 }
 
+export interface IComment { 
+    id: string;
+    createdAt: Date,
+    body: string,
+    username: string;
+    displayName: string;
+    image: string;
+}
+
 export interface IActivity {
     id: string;
     title: string;
@@ -16,6 +25,7 @@ export interface IActivity {
     isGoing: boolean;
     isHost: boolean;
     attendees: IAttendee[]
+    comments: IComment[]
 }
 
 export interface IActivityFormValues extends Partial<IActivity> {
