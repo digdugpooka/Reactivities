@@ -9,6 +9,13 @@ export interface IProfile {
     followingCount: number
 }
 
+export interface IUserActivity { 
+    id: string;
+    title: string;
+    category: string;
+    date: Date;
+}
+
 export interface IPhoto {
     id: string,
     url: string,

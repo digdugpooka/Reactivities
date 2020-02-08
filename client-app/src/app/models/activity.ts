@@ -15,6 +15,11 @@ export interface IComment {
     image: string;
 }
 
+export interface IActivitiesEnvelope { 
+    activities: IActivity[];
+    activityCount: number;
+}
+
 export interface IActivity {
     id: string;
     title: string;
