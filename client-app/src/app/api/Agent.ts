@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { IUser, IUserFormValues } from "../models/user";
 import { IProfile, IPhoto } from "../models/profile";
 
-axios.defaults.baseURL = "http://localhost:5000/api";
+axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 // Interceptor to add tokens to requests.
 axios.interceptors.request.use(
@@ -30,6 +30,9 @@ axios.interceptors.response.use(undefined, error => {
   if (status === 404) {
     history.push("/notfound");
   }
+  if (status === 401) { 
+    // console.log(error.response);
+  }
   if (
     status === 400 &&
     config.method === "get" &&
@@ -45,32 +48,22 @@ axios.interceptors.response.use(undefined, error => {
 
 const responseBody = (response: AxiosResponse) => response.data;
 
-// Delay requests by API (for testing/simulating delay)
-const sleep = (ms: number) => (response: AxiosResponse) =>
-  new Promise<AxiosResponse>(resolve =>
-    setTimeout(() => resolve(response), ms)
-  );
-
 const requests = {
   get: (url: string) =>
     axios
       .get(url)
-      .then(sleep(1000))
       .then(responseBody),
   post: (url: string, body: {}) =>
     axios
       .post(url, body)
-      .then(sleep(1000))
       .then(responseBody),
   put: (url: string, body: {}) =>
     axios
       .put(url, body)
-      .then(sleep(1000))
       .then(responseBody),
   del: (url: string) =>
     axios
       .delete(url)
-      .then(sleep(1000))
       .then(responseBody),
   postForm: (url: string, file: Blob) => { 
     let formData = new FormData();
@@ -84,7 +77,7 @@ const requests = {
 
 const Activities = {
   list: (params: URLSearchParams): Promise<IActivitiesEnvelope> => 
-    axios.get('/activities', { params: params }).then(sleep(1000)).then(responseBody),
+    axios.get('/activities', { params: params }).then(responseBody),
   details: (id: string): Promise<IActivity> =>
     requests.get(`/activities/${id}`),
   create: (activity: IActivity) => requests.post('/activities', activity),

@@ -14,7 +14,17 @@ namespace API
     {
         public static void Main(string[] args)
         {
-            IHost host = CreateHostBuilder(args).Build();
+            IHost host = null;
+
+            try 
+            {
+                host = CreateHostBuilder(args)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
 
             // Get access to the DataContext, apply any pending migrations to the DB (or create the DB) as needed.
             using (var scope = host.Services.CreateScope())

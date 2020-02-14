@@ -18,11 +18,11 @@ using Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using AutoMapper;
-using System.Collections.Generic;
 using Infrastructure.Photos;
 using API.SignalR;
 using System.Threading.Tasks;
 using Application.Profiles;
+using System;
 
 namespace API
 {
@@ -35,16 +35,32 @@ namespace API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public void ConfigureDevelopmentServices(IServiceCollection services)
         {
-            
-            // Make the DbContext available to the entire application as a registered service.
             services.AddDbContext<DataContext>(opt => 
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
+                opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+                //opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            ConfigureServices(services);
+        }
+
+        public void ConfigureProductionServices(IServiceCollection services)
+        {
+             services.AddDbContext<DataContext>(opt => 
+            {
+                opt.UseLazyLoadingProxies();
+                opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            ConfigureServices(services);
+        }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
 
             // Add a CORS policy to allow requests from localhost:3000 (React app).
             services.AddCors(opt => {
@@ -52,6 +68,7 @@ namespace API
                     policy
                         .AllowAnyHeader()
                         .AllowAnyMethod()
+                        .WithExposedHeaders("WWW-Authenticate")
                         .WithOrigins("http://localhost:3000")
                         .AllowCredentials(); // Allows SignalR to connect
                 });
@@ -96,7 +113,9 @@ namespace API
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = key,
                         ValidateAudience = false,
-                        ValidateIssuer = false
+                        ValidateIssuer = false,
+                        ValidateLifetime = true, 
+                        ClockSkew = TimeSpan.Zero // don't allow wiggle room on expiry
                     };
                     options.Events = new JwtBearerEvents
                     {
@@ -130,12 +149,34 @@ namespace API
             {
                 // app.UseDeveloperExceptionPage();
             }
+            else 
+            {
+                app.UseHsts();
+            }
 
             // Any request coming in via HTTP redirected to HTTPS.
-            // app.UseHttpsRedirection();
-
+            app.UseHttpsRedirection();
 
             /* DARREN: the order of the lines below matters. This is the recommended order. */
+
+
+            /* security headers to append to responses */
+            // app.UseXContentTypeOptions();
+            // app.UseReferrerPolicy(opt => opt.NoReferrer());
+            // app.UseXXssProtection(opt => opt.EnabledWithBlockMode()); // stops pages from loading when detecting reflected XSS attacks
+            // app.UseXfo(opt => opt.Deny()); // blocks iframes and prevents clickjacking
+            // app.UseCsp(opt => opt
+            //     .BlockAllMixedContent() // prevents http assets from https
+            //     .StyleSources(s => s.Self().CustomSources("https://fonts.googleapis.com", "sha256-F4GpCPyRepgP5znjMD8sc7PEjzet5Eef4r09dEGPpTs="))
+            //     .FontSources(s => s.Self().CustomSources("https://fonts.gstatic.com", "data:"))
+            //     .FormActions(s => s.Self())
+            //     .FrameAncestors(s => s.Self())
+            //     .ImageSources(s => s.Self().CustomSources("https://res.cloudinary.com", "blob:", "data:"))
+            //     .ScriptSources(s => s.Self().CustomSources("sha256-5As4+3YpY62+l38PsxCEkjB1R4YtyktBtRScTJ3fyLU="))
+            // );
+
+            app.UseDefaultFiles(); // looks inside wwwroot for typical start pages e.g. index.html
+            app.UseStaticFiles(); // must come before UseRouting, serves files from wwwroot
 
             // Routes requests to the correct controller.
             app.UseRouting();
@@ -143,13 +184,13 @@ namespace API
             app.UseCors("CorsPolicy");
 
             app.UseAuthentication(); // need to authenticate before you can authorize
-
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<ChatHub>("/chat"); // SignalR websockets endpoint for comments
+                endpoints.MapFallbackToController("Index", "Fallback"); // defers to client (React) for routes 
             });
         }
     }
