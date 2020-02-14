@@ -78,7 +78,7 @@ namespace API
             services.AddAutoMapper(typeof(Application.Activities.List.Handler));
             services.AddSignalR();
 
-            services.AddControllers(opt => 
+            services.AddControllersWithViews(opt => 
                 {
                     var policy = new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
@@ -88,6 +88,8 @@ namespace API
                 .AddFluentValidation(config => {
                     config.RegisterValidatorsFromAssemblyContaining<Application.Activities.Create>();
                 });
+            services.AddRazorPages();
+
 
             var builder = services.AddIdentityCore<AppUser>();
             var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
@@ -175,7 +177,7 @@ namespace API
             //     .ScriptSources(s => s.Self().CustomSources("sha256-5As4+3YpY62+l38PsxCEkjB1R4YtyktBtRScTJ3fyLU="))
             // );
 
-            app.UseDefaultFiles(); // looks inside wwwroot for typical start pages e.g. index.html
+            //app.UseDefaultFiles(); // looks inside wwwroot for typical start pages e.g. index.html
             app.UseStaticFiles(); // must come before UseRouting, serves files from wwwroot
 
             // Routes requests to the correct controller.
@@ -188,9 +190,10 @@ namespace API
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                //endpoints.MapControllers();
+                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapHub<ChatHub>("/chat"); // SignalR websockets endpoint for comments
-                endpoints.MapFallbackToController("Index", "Fallback"); // defers to client (React) for routes 
+                endpoints.MapFallbackToController("app/{action}", "Index", "App"); // defers to React app for routes 
             });
         }
     }
